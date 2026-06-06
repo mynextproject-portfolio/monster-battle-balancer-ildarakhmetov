@@ -1,5 +1,7 @@
 import flet as ft
 from dnd_api import get_monsters
+from i18n import t
+from screens.widgets import language_toggle_button
 from ui_constants import (
     SPACING_SM, SPACING_LG, SPACING_XL,
     BUTTON_HEIGHT_MD, BUTTON_HEIGHT_LG, BUTTON_WIDTH_MD, BUTTON_WIDTH_LG,
@@ -7,17 +9,18 @@ from ui_constants import (
 )
 
 
-def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
+def monster_selection_screen(page: ft.Page, on_back, on_view_cards, on_toggle_language=None):
     """Render the monster selection screen.
 
     Args:
         page: The Flet page object
         on_back: Callback function to go back to home
         on_view_cards: Callback function to proceed to the cards screen with selected monsters
+        on_toggle_language: Optional callback to switch the UI language
     """
     # Fetch monsters from API
     monsters = get_monsters()
-    
+
     if not monsters:
         # Show error if monsters failed to load
         return ft.Column(
@@ -25,11 +28,11 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
                 ft.Container(height=SPACING_XL),
                 ft.Icon(ft.Icons.ERROR_OUTLINE, size=80, color=ft.Colors.RED_400),
                 ft.Container(height=SPACING_LG),
-                ft.Text("Failed to load monsters", size=TEXT_SIZE_XL, color=ft.Colors.RED_400),
-                ft.Text("Please check your internet connection", size=TEXT_SIZE_LG, color=ft.Colors.GREY_400),
+                ft.Text(t("load_monsters_failed"), size=TEXT_SIZE_XL, color=ft.Colors.RED_400),
+                ft.Text(t("check_connection"), size=TEXT_SIZE_LG, color=ft.Colors.GREY_400),
                 ft.Container(height=SPACING_XL),
                 ft.ElevatedButton(
-                    "← Back",
+                    t("back_btn"),
                     on_click=on_back,
                     width=BUTTON_WIDTH_MD,
                     height=BUTTON_HEIGHT_MD,
@@ -38,16 +41,16 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             alignment=ft.MainAxisAlignment.CENTER,
         )
-    
+
     # Create dropdown options
     monster_options = [
-        ft.dropdown.Option(monster["index"], monster["name"]) 
+        ft.dropdown.Option(monster["index"], monster["name"])
         for monster in monsters
     ]
-    
+
     # Create dropdowns for monster selection with search enabled
     monster1_dropdown = ft.Dropdown(
-        label="Select Monster 1",
+        label=t("select_monster_1"),
         options=monster_options,
         width=400,
         color=ft.Colors.WHITE,
@@ -55,9 +58,9 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
         text_size=TEXT_SIZE_LG,
         autofocus=False,
     )
-    
+
     monster2_dropdown = ft.Dropdown(
-        label="Select Monster 2",
+        label=t("select_monster_2"),
         options=monster_options,
         width=400,
         color=ft.Colors.WHITE,
@@ -65,42 +68,50 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
         text_size=TEXT_SIZE_LG,
         autofocus=False,
     )
-    
+
     def handle_view_cards(e):
         """Handle the view cards button click."""
         if monster1_dropdown.value and monster2_dropdown.value:
             on_view_cards(monster1_dropdown.value, monster2_dropdown.value)
         else:
             page.snack_bar = ft.SnackBar(
-                ft.Text("Please select two monsters!")
+                ft.Text(t("select_two_monsters"))
             )
             page.snack_bar.open = True
             page.update()
-    
+
+    # Header: back button + title on the left, language toggle on the right.
+    header_left = ft.Row(
+        [
+            ft.IconButton(
+                icon=ft.Icons.ARROW_BACK,
+                icon_color=ft.Colors.WHITE,
+                on_click=on_back,
+                tooltip=t("back_to_home"),
+            ),
+            ft.Text(
+                t("monster_selection_title"),
+                size=28,
+                weight=ft.FontWeight.BOLD,
+                color=ft.Colors.WHITE,
+            ),
+        ],
+        alignment=ft.MainAxisAlignment.START,
+    )
+    header = ft.Row(
+        [header_left]
+        + ([language_toggle_button(on_toggle_language)] if on_toggle_language else []),
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+    )
+
     return ft.Container(
         content=ft.Column(
             [
                 ft.Container(height=SPACING_LG),
-                ft.Row(
-                    [
-                        ft.IconButton(
-                            icon=ft.Icons.ARROW_BACK,
-                            icon_color=ft.Colors.WHITE,
-                            on_click=on_back,
-                            tooltip="Back to home",
-                        ),
-                        ft.Text(
-                            "Monster Selection",
-                            size=28,
-                            weight=ft.FontWeight.BOLD,
-                            color=ft.Colors.WHITE,
-                        ),
-                    ],
-                    alignment=ft.MainAxisAlignment.START,
-                ),
+                header,
                 ft.Container(height=SPACING_XL),
                 ft.Text(
-                    "Choose two monsters to compare",
+                    t("choose_two"),
                     size=TEXT_SIZE_XL,
                     color=ft.Colors.GREY_400,
                     text_align=ft.TextAlign.CENTER,
@@ -117,7 +128,7 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
                                         [
                                             ft.Icon(ft.Icons.PERSON, size=30, color=ft.Colors.AMBER_400),
                                             ft.Text(
-                                                "Monster 1",
+                                                t("monster_1"),
                                                 size=TEXT_SIZE_XL,
                                                 color=ft.Colors.AMBER_400,
                                                 weight=ft.FontWeight.BOLD,
@@ -155,7 +166,7 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
                                         [
                                             ft.Icon(ft.Icons.PERSON, size=30, color=ft.Colors.BLUE_400),
                                             ft.Text(
-                                                "Monster 2",
+                                                t("monster_2"),
                                                 size=TEXT_SIZE_XL,
                                                 color=ft.Colors.BLUE_400,
                                                 weight=ft.FontWeight.BOLD,
@@ -180,7 +191,7 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
                 ),
                 ft.Container(height=SPACING_XL * 2),
                 ft.ElevatedButton(
-                    "🃏 View Cards",
+                    t("view_cards_btn"),
                     width=BUTTON_WIDTH_LG,
                     height=BUTTON_HEIGHT_LG,
                     on_click=handle_view_cards,
@@ -196,4 +207,3 @@ def monster_selection_screen(page: ft.Page, on_back, on_view_cards):
         ),
         expand=True,
     )
-
