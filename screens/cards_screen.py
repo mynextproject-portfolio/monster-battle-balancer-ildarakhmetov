@@ -1,6 +1,8 @@
 import flet as ft
 from dnd_api import get_monster_details
+from i18n import t
 from models.monster import Monster
+from screens.widgets import language_toggle_button
 from ui_constants import (
     SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XL,
     BUTTON_HEIGHT_MD, BUTTON_WIDTH_MD,
@@ -8,7 +10,8 @@ from ui_constants import (
 )
 
 
-def cards_screen(page: ft.Page, monster1_index: str, monster2_index: str, on_back):
+def cards_screen(page: ft.Page, monster1_index: str, monster2_index: str, on_back,
+                 on_toggle_language=None):
     """Render the two selected monsters as stat cards.
 
     Args:
@@ -16,6 +19,7 @@ def cards_screen(page: ft.Page, monster1_index: str, monster2_index: str, on_bac
         monster1_index: Index of the first monster
         monster2_index: Index of the second monster
         on_back: Callback function to go back to monster selection
+        on_toggle_language: Optional callback to switch the UI language
     """
     # Fetch monster details
     monster1 = get_monster_details(monster1_index)
@@ -28,11 +32,11 @@ def cards_screen(page: ft.Page, monster1_index: str, monster2_index: str, on_bac
                 ft.Container(height=SPACING_XL),
                 ft.Icon(ft.Icons.ERROR_OUTLINE, size=80, color=ft.Colors.RED_400),
                 ft.Container(height=SPACING_LG),
-                ft.Text("Failed to load monster details", size=TEXT_SIZE_XL, color=ft.Colors.RED_400),
-                ft.Text("Please check your internet connection", size=TEXT_SIZE_LG, color=ft.Colors.GREY_400),
+                ft.Text(t("load_details_failed"), size=TEXT_SIZE_XL, color=ft.Colors.RED_400),
+                ft.Text(t("check_connection"), size=TEXT_SIZE_LG, color=ft.Colors.GREY_400),
                 ft.Container(height=SPACING_XL),
                 ft.ElevatedButton(
-                    "← Back",
+                    t("back_btn"),
                     on_click=on_back,
                     width=BUTTON_WIDTH_MD,
                     height=BUTTON_HEIGHT_MD,
@@ -68,19 +72,19 @@ def cards_screen(page: ft.Page, monster1_index: str, monster2_index: str, on_bac
                         content=ft.Column(
                             [
                                 ft.Text(
-                                    f"HP: {monster.hp}",
+                                    t("hp", hp=monster.hp),
                                     size=TEXT_SIZE_MD,
                                     color=ft.Colors.GREEN_300,
                                     weight=ft.FontWeight.BOLD,
                                 ),
                                 ft.Text(
-                                    f"Defense (AC): {monster.ac}",
+                                    t("defense_ac", ac=monster.ac),
                                     size=TEXT_SIZE_MD,
                                     color=ft.Colors.BLUE_300,
                                     weight=ft.FontWeight.BOLD,
                                 ),
                                 ft.Text(
-                                    f"Strength (STR): {monster.strength}",
+                                    t("strength_str", str=monster.strength),
                                     size=TEXT_SIZE_MD,
                                     color=ft.Colors.ORANGE_300,
                                     weight=ft.FontWeight.BOLD,
@@ -104,28 +108,35 @@ def cards_screen(page: ft.Page, monster1_index: str, monster2_index: str, on_bac
             bgcolor=ft.Colors.GREY_800,
         )
 
+    # Header: back button + title on the left, language toggle on the right.
+    header_left = ft.Row(
+        [
+            ft.IconButton(
+                icon=ft.Icons.ARROW_BACK,
+                icon_color=ft.Colors.WHITE,
+                on_click=on_back,
+                tooltip=t("back_to_selection"),
+            ),
+            ft.Text(
+                t("monster_cards_title"),
+                size=28,
+                weight=ft.FontWeight.BOLD,
+                color=ft.Colors.WHITE,
+            ),
+        ],
+        alignment=ft.MainAxisAlignment.START,
+    )
+    header = ft.Row(
+        [header_left]
+        + ([language_toggle_button(on_toggle_language)] if on_toggle_language else []),
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+    )
+
     return ft.Container(
         content=ft.Column(
             [
                 ft.Container(height=SPACING_SM),
-                # Header: back button + title
-                ft.Row(
-                    [
-                        ft.IconButton(
-                            icon=ft.Icons.ARROW_BACK,
-                            icon_color=ft.Colors.WHITE,
-                            on_click=on_back,
-                            tooltip="Back to monster selection",
-                        ),
-                        ft.Text(
-                            "Monster Cards",
-                            size=28,
-                            weight=ft.FontWeight.BOLD,
-                            color=ft.Colors.WHITE,
-                        ),
-                    ],
-                    alignment=ft.MainAxisAlignment.START,
-                ),
+                header,
                 ft.Container(height=SPACING_XL),
                 # The two monster cards side by side
                 ft.Row(
